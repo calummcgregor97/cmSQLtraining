@@ -503,3 +503,174 @@ SELECT COUNT(*),
     END AS "relative_size_to_earth"
 FROM solar_system_objects
 GROUP BY relative_size_to_earth
+
+
+## joining related tables
+CREATE TABLE students (id INTEGER PRIMARY KEY,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT,
+    phone TEXT,
+    birthdate TEXT);
+
+INSERT INTO students (first_name, last_name, email, phone, birthdate)
+    VALUES ("Peter", "Rabbit", "peter@rabbit.com", "555-6666", "2002-06-24");
+INSERT INTO students (first_name, last_name, email, phone, birthdate)
+    VALUES ("Alice", "Wonderland", "alice@wonderland.com", "555-4444", "2002-07-04");
+    
+CREATE TABLE student_grades (id INTEGER PRIMARY KEY,
+    student_id INTEGER,
+    test TEXT,
+    grade INTEGER);
+
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (1, "Nutrition", 95);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (2, "Nutrition", 92);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (1, "Chemistry", 85);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (2, "Chemistry", 95);
+    
+SELECT * FROM student_grades;
+
+/* cross join */
+SELECT * FROM student_grades, students; ##least useful - matches every row with every row, only want to match if a certain row matches
+
+
+/* implicit inner join */
+SELECT * FROM student_grades, students
+    WHERE student_grades.student_id = students.id; ## still not best practice
+
+
+/* explicit inner join - JOIN */
+SELECT first_name, last_name, email, test, grade FROM students
+    JOIN student_grades
+    ON students.id = student_grades.student_id ## best practice
+
+/* explicit inner join - JOIN */
+SELECT students.first_name, students.last_name, students.email, student_grades.test, student_grades.grade FROM students
+    JOIN student_grades
+    ON students.id = student_grades.student_id
+    WHERE grade > 90; ## can still use commands like WHERE, GROUPBY etc. ALSO always use table names
+
+
+## challenge - select the 2 tables with a join so that you can see each person's name next to their hobby
+CREATE TABLE persons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    age INTEGER);
+    
+INSERT INTO persons (name, age) VALUES ("Bobby McBobbyFace", 12);
+INSERT INTO persons (name, age) VALUES ("Lucy BoBucie", 25);
+INSERT INTO persons (name, age) VALUES ("Banana FoFanna", 14);
+INSERT INTO persons (name, age) VALUES ("Shish Kabob", 20);
+INSERT INTO persons (name, age) VALUES ("Fluffy Sparkles", 8);
+INSERT INTO persons (name, age) VALUES ("Louise Wylie", 8);
+
+CREATE table hobbies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER,
+    name TEXT);
+    
+INSERT INTO hobbies (person_id, name) VALUES (1, "drawing");
+INSERT INTO hobbies (person_id, name) VALUES (1, "coding");
+INSERT INTO hobbies (person_id, name) VALUES (2, "dancing");
+INSERT INTO hobbies (person_id, name) VALUES (2, "coding");
+INSERT INTO hobbies (person_id, name) VALUES (3, "skating");
+INSERT INTO hobbies (person_id, name) VALUES (3, "rowing");
+INSERT INTO hobbies (person_id, name) VALUES (3, "drawing");
+INSERT INTO hobbies (person_id, name) VALUES (4, "coding");
+INSERT INTO hobbies (person_id, name) VALUES (4, "dilly-dallying");
+INSERT INTO hobbies (person_id, name) VALUES (4, "meowing");
+INSERT INTO hobbies (person_id, name) VALUES (6, "being silly");
+
+SELECT persons.name, hobbies.name FROM persons
+    JOIN hobbies
+    ON persons.id = hobbies.person_id;
+    
+SELECT persons.name, hobbies.name FROM persons
+    JOIN hobbies
+    ON persons.id = hobbies.person_id
+    WHERE persons.name = "Bobby McBobbyFace" ### select a specific name
+
+
+
+## left outer join
+CREATE TABLE students (id INTEGER PRIMARY KEY,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT,
+    phone TEXT,
+    birthdate TEXT);
+
+INSERT INTO students (first_name, last_name, email, phone, birthdate)
+    VALUES ("Peter", "Rabbit", "peter@rabbit.com", "555-6666", "2002-06-24");
+INSERT INTO students (first_name, last_name, email, phone, birthdate)
+    VALUES ("Alice", "Wonderland", "alice@wonderland.com", "555-4444", "2002-07-04");
+    
+CREATE TABLE student_grades (id INTEGER PRIMARY KEY,
+    student_id INTEGER,
+    test TEXT,
+    grade INTEGER);
+
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (1, "Nutrition", 95);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (2, "Nutrition", 92);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (1, "Chemistry", 85);
+INSERT INTO student_grades (student_id, test, grade)
+    VALUES (2, "Chemistry", 95);
+
+CREATE TABLE student_projects (id INTEGER PRIMARY KEY,
+    student_id INTEGER,
+    title TEXT);
+    
+INSERT INTO student_projects (student_id, title)
+    VALUES (1, "Carrotapault");
+   
+/* outer join */ 
+SELECT students.first_name, students.last_name, student_projects.title
+    FROM students
+    LEFT OUTER JOIN student_projects
+    ON students.id = student_projects.student_id; ## this pulls all rows, even if there is no data in some of the rows - in this case there is no project for Alice but this would output her anyway with NULL
+
+
+
+## challenge
+CREATE TABLE customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    email TEXT);
+    
+INSERT INTO customers (name, email) VALUES ("Doctor Who", "doctorwho@timelords.com");
+INSERT INTO customers (name, email) VALUES ("Harry Potter", "harry@potter.com");
+INSERT INTO customers (name, email) VALUES ("Captain Awesome", "captain@awesome.com");
+
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER,
+    item TEXT,
+    price REAL);
+
+INSERT INTO orders (customer_id, item, price)
+    VALUES (1, "Sonic Screwdriver", 1000.00);
+INSERT INTO orders (customer_id, item, price)
+    VALUES (2, "High Quality Broomstick", 40.00);
+INSERT INTO orders (customer_id, item, price)
+    VALUES (1, "TARDIS", 1000000.00);
+
+
+SELECT customers.name, customers.email, orders.item, orders.price
+    FROM customers
+    LEFT OUTER JOIN orders
+    ON customers.id = orders.customer_id; ## query that lists name and email followed by item and price, use left outer join
+
+
+SELECT customers.name, customers.email, SUM(orders.price)
+    FROM customers
+    LEFT OUTER JOIN orders
+    ON customers.id = orders.customer_id
+    GROUP BY customers.id
+    ORDER BY orders.price DESC; ## one row per customer with their name and email and total amount of money spent, sort by most to least
